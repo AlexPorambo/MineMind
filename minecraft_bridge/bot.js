@@ -63,6 +63,31 @@ wss.on("connection", (socket) => {
                 return;
             }
 
+            //Teleport using Minecraft's command system
+            if (command.action === "reset") {
+                bot.clearControlStates();
+
+                const { x, y, z } = command;
+
+                if (![x, y,  z].every(Number.isFinite)) {
+                    socket.send(JSON.stringify({
+                        error: "Invalid reset coordinates"
+                    }));
+                    return;
+                }
+
+                // Teleport using Minecraft's command system
+                bot.chat(`/tp @s ${x} ${y} ${z}`);
+
+                await bot.waitForTicks(10);
+
+                socket.send(JSON.stringify({
+                    action: "reset",
+                    observation: getObservation()
+                }));
+
+                return;
+            }
             // Return current state
             if (command.action === "observe") {
                 socket.send(JSON.stringify({
@@ -89,6 +114,8 @@ wss.on("connection", (socket) => {
 
             // Move for a fixed number of game ticks
             bot.clearControlStates();
+
+            await bot.look(Math.PI, 0, true);
             bot.setControlState(command.action, true);
 
             await bot.waitForTicks(10);
